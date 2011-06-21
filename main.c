@@ -9,19 +9,21 @@
 #include <netinet/in.h>     /* in_addr structure */
 
 #include <pthread.h>
+#include <signal.h>
 
 int sock;
 WINDOW *wmain;
 int theend = 0;
+
+wchar_t rbuffer[200][1024];
+wchar_t *rbuf_[200];
+int rbl = 0;
 
 void print_buf(WINDOW *win, wchar_t *buf[], int sp);
 
 void * handle_recv(void * args)
 {
 	int i, curline = 0;
-	wchar_t rbuffer[200][1024];
-	wchar_t *rbuf_[200];
-	int rbl = 0;
 	char buf[2048];
 
 	for (i = 0; i < 200; i++)
@@ -30,12 +32,13 @@ void * handle_recv(void * args)
 	while(1)
 	{
 		int i, j = curline, n;
-		wchar_t * pbuf = rbuffer[rbl%200];
+		wchar_t * pbuf;
 		n = recv(sock, buf, 2048, 0);
 		buf[n] = 0;
+		pbuf = rbuffer[rbl%200];
 		if (!n)
 			break;
-		for (i = 0; i < n; i++, j++)
+		for (i = 0; i < n; i++)
 			if (buf[i] == '\n')
 			{
 				pbuf[j] = 0;
@@ -44,7 +47,7 @@ void * handle_recv(void * args)
 
 			} else
 			{
-				pbuf[j] = buf[i];
+				pbuf[j++] = buf[i];
 			}
 
 		curline = j;
@@ -54,6 +57,7 @@ void * handle_recv(void * args)
 	}
 
 	theend = 1;
+	endwin();			/* End curses mode		  */
 	exit(0);
 }
 
@@ -87,6 +91,8 @@ int scur_pos (wchar_t *buf, int cur)
 	return p;
 }
 
+WINDOW *tbox;
+
 void print_buf(WINDOW *win, wchar_t *buf[], int sp)
 {
 	int i, j = 0, or, oc;
@@ -101,13 +107,22 @@ void print_buf(WINDOW *win, wchar_t *buf[], int sp)
 	for (; i < sp; i++, j++)
 		mvwaddwstr(win, j, 0, buf[i%200]);
 
-	wrefresh(win);
+	wrefresh(wmain);
 	move(or, oc);
+	wrefresh(tbox);
+}
+
+void sigint_handler(int s)
+{
+	endwin();
+	shutdown(sock, SHUT_RDWR);
+	close(sock);
+	signal(SIGINT, SIG_DFL);
+	kill(getpid(), SIGINT);
 }
 
 int main(int argc, char *argv[])
 {	
-	WINDOW *tbox;
 	wchar_t scroll_[100][1024];
 	wchar_t buf[1024];
 	int sp = 0, i;
@@ -143,8 +158,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	pthread_create( &thr, NULL, handle_recv, NULL);
-
 	for (i = 0; i < 100; i++)
 		scroll[i] = scroll_[i];
 
@@ -159,11 +172,16 @@ int main(int argc, char *argv[])
 	move(LINES-1, 0);
 	wrefresh(tbox);
 
+	pthread_create( &thr, NULL, handle_recv, NULL);
+
 	while (!theend)
 	{
 		char cbuf[1024];
 		int i;
 		tbox_gets(tbox, buf, 1024, scroll, 100);
+		move(LINES-1, 0);
+		memcpy(rbuffer[rbl++], buf, wcslen(buf) * sizeof(wchar_t));
+		print_buf(wmain, rbuf_, rbl);
 		for (i = 0; i < wcslen(buf); i++)
 			cbuf[i] = buf[i];
 		cbuf[i] = '\n';
