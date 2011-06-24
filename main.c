@@ -25,6 +25,7 @@ void * handle_recv(void * args)
 {
 	int i, curline = 0;
 	char buf[2048];
+	char line[2048];
 
 	for (i = 0; i < 200; i++)
 		rbuf_[i] = rbuffer[i];
@@ -41,14 +42,13 @@ void * handle_recv(void * args)
 		for (i = 0; i < n; i++)
 			if (buf[i] == '\n')
 			{
-				pbuf[j] = 0;
+				line[j] = 0;
+				mbstowcs(pbuf, line, 1024);
 				j = 0;
 				pbuf = rbuffer[++rbl%200];
 
 			} else
-			{
-				pbuf[j++] = buf[i];
-			}
+				line[j++] = buf[i];
 
 		curline = j;
 //		waddstr(wmain, buf);
@@ -176,17 +176,18 @@ int main(int argc, char *argv[])
 
 	while (!theend)
 	{
-		char cbuf[1024];
-		int i;
+		char cbuf[2048];
+		int l;
 		tbox_gets(tbox, buf, 1024, scroll, 100);
 		move(LINES-1, 0);
-		memcpy(rbuffer[rbl++], buf, wcslen(buf) * sizeof(wchar_t));
-		print_buf(wmain, rbuf_, rbl);
-		for (i = 0; i < wcslen(buf); i++)
-			cbuf[i] = buf[i];
-		cbuf[i] = '\n';
-		cbuf[i+1] = 0;
+		l = wcslen(buf);
+//		memcpy(rbuffer[rbl++], buf, l * sizeof(wchar_t));
+//		print_buf(wmain, rbuf_, rbl);
 
+		buf[l] = '\n';
+		buf[l+1] = 0;
+
+		wcstombs(cbuf, buf, 2048);
 		send(sock, cbuf, strlen(cbuf), 0);
 	}
 
