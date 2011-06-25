@@ -263,8 +263,8 @@ int tbox_gets (WINDOW *tbox, wchar_t *buf, int size, wchar_t **scroll, int ssize
 
 			curs--;
 
-			for (i = 0; scroll[curs][i]; i++)
-				buf[i] = scroll[curs][i];
+			for (i = 0; scroll[curs % ssize][i]; i++)
+				buf[i] = scroll[curs % ssize][i];
 
 			buf[i] = 0;
 			cur = bp = i;
@@ -280,8 +280,8 @@ int tbox_gets (WINDOW *tbox, wchar_t *buf, int size, wchar_t **scroll, int ssize
 
 			curs++;
 
-			for (i = 0; scroll[curs][i]; i++)
-				buf[i] = scroll[curs][i];
+			for (i = 0; scroll[curs % ssize][i]; i++)
+				buf[i] = scroll[curs % ssize][i];
 
 			buf[i] = 0;
 			cur = bp = i;
