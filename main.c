@@ -19,6 +19,41 @@ wchar_t rbuffer[200][1024];
 wchar_t *rbuf_[200];
 int rbl = 0;
 
+void word_wrap ()
+{
+	int i = 0, p = 0, ls = 0;
+	wchar_t *a = rbuffer[rbl%200];
+
+	while (a[i])
+	{
+		if (a[i] == ' ')
+			ls = i;
+
+		if (a[i] == '\t')
+			p += 8 - p%8;
+		else
+			p++;
+
+		if (p > 79)
+		{
+			int cut;
+			if (ls > 0)
+				cut = ls + 1;
+			else
+				cut = i + 1;
+
+			wcscpy(rbuffer[++rbl%200], a + cut);
+			a[cut] = 0;
+			ls = 0;
+			a = rbuffer[rbl%200];
+			i = 0;
+			p = 0;
+		} else
+			i++;
+	}
+}
+
+
 void print_buf(WINDOW *win, wchar_t *buf[], int sp);
 
 void * handle_recv(void * args)
@@ -45,6 +80,7 @@ void * handle_recv(void * args)
 				line[j] = 0;
 				mbstowcs(pbuf, line, 1024);
 				j = 0;
+				word_wrap();
 				pbuf = rbuffer[++rbl%200];
 
 			} else
