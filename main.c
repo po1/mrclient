@@ -1,8 +1,7 @@
-#include <ncursesw/ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
-#include <wchar.h>
+#include <curses.h>
 
 #include <netdb.h>
 #include <arpa/inet.h>      /* inet_ntoa() to format IP address */
