@@ -6,5 +6,7 @@ find_package(Ncurses REQUIRED)
 
 include_directories(SYSTEM ${NCURSES_INCLUDE_DIRS})
 
+add_definitions(-D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED)
+
 add_executable(mrclient main.c)
 target_link_libraries(mrclient ${NCURSES_LIBRARIES})

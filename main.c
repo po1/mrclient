@@ -9,6 +9,7 @@
 
 #include <pthread.h>
 #include <signal.h>
+#include <unistd.h>
 
 int sock;
 WINDOW *wmain;
@@ -17,6 +18,8 @@ int theend = 0;
 wchar_t rbuffer[200][1024];
 wchar_t *rbuf_[200];
 int rbl = 0;
+
+int tbox_gets (WINDOW *tbox, wchar_t *buf, int size, wchar_t **scroll, int ssize);
 
 void word_wrap ()
 {
